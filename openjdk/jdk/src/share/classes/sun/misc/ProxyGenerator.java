@@ -52,6 +52,8 @@ import sun.security.action.GetBooleanAction;
  *
  * @author      Peter Jones
  * @since       1.3
+ *
+ * 动态代理生成代理类字节码的工具
  */
 public class ProxyGenerator {
     /*
@@ -426,45 +428,27 @@ public class ProxyGenerator {
      */
     private byte[] generateClassFile() {
 
-        /* ============================================================
-         * Step 1: Assemble ProxyMethod objects for all methods to
-         * generate proxy dispatching code for.
-         */
-
         /*
-         * Record that proxy methods are needed for the hashCode, equals,
-         * and toString methods of java.lang.Object.  This is done before
-         * the methods from the proxy interfaces so that the methods from
-         * java.lang.Object take precedence over duplicate methods in the
-         * proxy interfaces.
+         *第一步, 将所有的方法组装成ProxyMethod对象
+         *首先为代理类生成toString, hashCode, equals等代理方法
          */
         addProxyMethod(hashCodeMethod, Object.class);
         addProxyMethod(equalsMethod, Object.class);
         addProxyMethod(toStringMethod, Object.class);
 
-        /*
-         * Now record all of the methods from the proxy interfaces, giving
-         * earlier interfaces precedence over later ones with duplicate
-         * methods.
-         */
+        //遍历每一个接口的每一个方法, 并且为其生成ProxyMethod对象
         for (Class<?> intf : interfaces) {
             for (Method m : intf.getMethods()) {
                 addProxyMethod(m, intf);
             }
         }
 
-        /*
-         * For each set of proxy methods with the same signature,
-         * verify that the methods' return types are compatible.
-         */
+        //对于具有相同签名的代理方法, 检验方法的返回值是否兼容
         for (List<ProxyMethod> sigmethods : proxyMethods.values()) {
             checkReturnTypes(sigmethods);
         }
 
-        /* ============================================================
-         * Step 2: Assemble FieldInfo and MethodInfo structs for all of
-         * fields and methods in the class we are generating.
-         */
+        //第二步, 组装要生成的class文件的所有的字段信息和方法信息
         try {
             methods.add(generateConstructor());
 
